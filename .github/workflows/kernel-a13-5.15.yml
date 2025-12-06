@@ -45,8 +45,8 @@ jobs:
       matrix:
         include:
           # 从谷歌提交找到补丁，修复94与104的兼容性问题
-          - sub_level: "74"
-            os_patch_level: "2023-01"
+          - sub_level: "78"
+            os_patch_level: "2023-03"
           #- sub_level: "94"
           #  os_patch_level: "2023-05"
           #- sub_level: "104"
