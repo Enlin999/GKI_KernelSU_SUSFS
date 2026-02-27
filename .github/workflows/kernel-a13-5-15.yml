@@ -31,7 +31,7 @@ on:
         description: "自定义版本名 (可选)"
         required: false
         type: string
-        default:"-android13-8-00003-g0382289e12ab-ab10346281"
+        default: "-android13-8-00003-g0382289e12ab-ab10346281"
       build_time:
         description: "自定义构建时间 (可选，N或留空=当前UTC)"
         required: false
