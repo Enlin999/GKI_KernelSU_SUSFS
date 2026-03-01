@@ -56,7 +56,7 @@ on:
         description: "禁用 SUSFS"
         required: true
         type: boolean
-        default: false
+        default: true
   workflow_call:
     inputs:
       kernelsu_variant:
