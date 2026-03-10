@@ -20,29 +20,9 @@ English | [**简体中文**](README.md)
 
 <table>
 <tr>
-<td align="center" width="50%">
-
-**📖 Documentation**
-
-[GitHub Wiki](https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki)
-
-</td>
-<td align="center" width="50%">
-
-**📥 Downloads**
-
-[Releases](https://github.com/zzh20188/GKI_KernelSU_SUSFS/releases)
-
-</td>
-</tr>
-<tr>
-<td align="center" colspan="2">
-
-**🔰 Beginner Custom Build Guide**
-
-[Fork & Custom Build Guide](https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki/Fork%E4%B8%8E%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E6%8C%87%E5%8D%97)
-
-</td>
+<td align="center" width="33%">📖 <b><a href="https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki">Documentation</a></b></td>
+<td align="center" width="34%">📥 <b><a href="https://github.com/zzh20188/GKI_KernelSU_SUSFS/releases">Downloads</a></b></td>
+<td align="center" width="33%">🔰 <b><a href="https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki/Fork%E4%B8%8E%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E6%8C%87%E5%8D%97">Beginner Custom Build Guide</a></b></td>
 </tr>
 </table>
 
@@ -53,6 +33,10 @@ English | [**简体中文**](README.md)
 > **Note:** OnePlus ColorOS 14/15 is currently not supported. A data wipe may be required after flashing.
 
 > **ReSukiSU: ReSukiSU updates more frequently than SukiSU. If SukiSU errors occur, try ReSukiSU instead.**
+>
+> **Default variant has been switched to ReSukiSU**
+
+> **Android 16: Android 16 - 6.12 kernel version is now supported**
 
 
 ---

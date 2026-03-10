@@ -241,8 +241,11 @@ jobs:
 
           echo "克隆 SUSFS (分支: $SUSFS_BRANCH)..."
           if [ "${{ inputs.ksu_variant }}" == "SukiSU" ]; then
-            # SukiSU 使用 ShirkNeko 的 SUSFS 分支
-            git clone https://github.com/ShirkNeko/susfs4ksu.git -b "$SUSFS_BRANCH"
+            # SukiSU 优先使用 ShirkNeko 的 SUSFS 分支，若不存在则回退到 simonpunk 原版
+            if ! git clone https://github.com/ShirkNeko/susfs4ksu.git -b "$SUSFS_BRANCH" 2>/dev/null; then
+              echo "ShirkNeko 仓库未找到分支 $SUSFS_BRANCH，回退到 simonpunk 原版..."
+              git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
+            fi
           elif [ "${{ inputs.ksu_variant }}" == "ReSukiSU" ]; then
             # ReSukiSU 使用 simonpunk 的原版 SUSFS
             git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
@@ -411,7 +414,7 @@ jobs:
             case "$branch_input" in
               "Stable(标准)")
                 case "$variant_input" in
-                  "Next") BRANCH="-s stable" ;;
+                  "Next") ;; # Next 使用硬编码分支，不需要 BRANCH
                   "SukiSU") BRANCH="-s builtin" ;;
                   "Official"|"MKSU") BRANCH="-s main" ;;
                   *) BRANCH="-" ;;
@@ -420,7 +423,7 @@ jobs:
               "Dev(开发)")
                 case "$variant_input" in
                   "Official"|"MKSU") BRANCH="-s main" ;;
-                  "Next") BRANCH="-s dev" ;;
+                  "Next") ;; # Next 使用硬编码分支，不需要 BRANCH
                   "SukiSU") BRANCH="-s builtin" ;;
                   *) echo "未知变体: $variant_input" >&2; exit 1 ;;
                 esac
@@ -726,14 +729,13 @@ jobs:
         if: inputs.use_zram
         working-directory: ${{ env.KERNEL_ROOT }}/common
         run: |
-          # 第一阶段：升级 LZ4 到 1.10.0
+          # 第一阶段：升级 LZ4 到 1.10.0 并添加 ARM64 NEON 加速
           echo "升级 LZ4..."
           rm -f lib/lz4/lz4_compress.c lib/lz4/lz4_decompress.c lib/lz4/lz4defs.h lib/lz4/lz4hc_compress.c
 
           cp -r $ZZH_PATCHES/zram/lz4/* ./lib/lz4/
           cp -r $ZZH_PATCHES/zram/include/linux/* ./include/linux/
-          cp $ZZH_PATCHES/zram/${{ inputs.kernel_version }}/lz4_1.10.0.patch ./
-          patch -p1 -F 3 --fuzz=5 < lz4_1.10.0.patch || true
+          bash $ZZH_PATCHES/zram/apply_lz4_neon.sh
 
           if [ -f "fs/f2fs/Makefile" ] && ! grep -qF "f2fs-\$(CONFIG_F2FS_IOSTAT) += iostat.o" "fs/f2fs/Makefile"; then
             echo "f2fs-\$(CONFIG_F2FS_IOSTAT) += iostat.o" >> "fs/f2fs/Makefile"
@@ -746,10 +748,14 @@ jobs:
           cp -r $SUKISU_PATCHES/other/zram/lz4k_oplus ./lib/
 
           cp $SUKISU_PATCHES/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4kd.patch ./
-          patch -p1 -F 3 < lz4kd.patch || true
+          if ! patch -p1 -F 3 < lz4kd.patch; then
+            echo "::warning::lz4kd.patch 应用失败，可能已应用或上下文不匹配"
+          fi
 
           cp $SUKISU_PATCHES/other/zram/zram_patch/${{ inputs.kernel_version }}/lz4k_oplus.patch ./
-          patch -p1 -F 3 < lz4k_oplus.patch || true
+          if ! patch -p1 -F 3 < lz4k_oplus.patch; then
+            echo "::warning::lz4k_oplus.patch 应用失败，可能已应用或上下文不匹配"
+          fi
 
       # ==================== 修复 6.6 WiFi/蓝牙兼容性（三星 + 小米） ====================
       # 合并三星与小米修复，并采用幂等写法避免重复追加导致脏变更
@@ -804,6 +810,11 @@ jobs:
           # 小米：补充符号（幂等）
           ensure_line_once "$XIAOMI_SYMBOL_LIST" "device_find_any_child"
 
+      # ==================== 备份原始 defconfig ====================
+      # 用于后续生成 defconfig fragment（bazel trim 兼容）
+      - name: 备份原始 defconfig
+        run: cp "$DEFCONFIG" "$DEFCONFIG.orig"
+
       # ==================== 配置 ZRAM 选项 ====================
       # 启用各种 ZRAM 压缩算法
       - name: 配置 ZRAM 选项
@@ -811,8 +822,9 @@ jobs:
         run: |
           CONFIG_FILE="$DEFCONFIG"
 
+          # 5.10 需要额外基础配置
           if [ "${{ inputs.kernel_version }}" = "5.10" ]; then
-            cat >> "$CONFIG_FILE" << 'EOF'
+            cat >> "$CONFIG_FILE" <<'EOF'
           CONFIG_ZSMALLOC=y
           CONFIG_ZRAM=y
           CONFIG_MODULE_SIG=n
@@ -821,6 +833,7 @@ jobs:
           EOF
           fi
 
+          # 5.15 / 6.1：将模块改为内建
           if [ "${{ inputs.kernel_version }}" != "6.6" ] && [ "${{ inputs.kernel_version }}" != "5.10" ]; then
             if grep -q "CONFIG_ZSMALLOC" "$CONFIG_FILE"; then
               sed -i 's/CONFIG_ZSMALLOC=m/CONFIG_ZSMALLOC=y/g' "$CONFIG_FILE"
@@ -830,24 +843,20 @@ jobs:
             sed -i 's/CONFIG_ZRAM=m/CONFIG_ZRAM=y/g' "$CONFIG_FILE"
           fi
 
+          # 6.6：将模块改为内建
           if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
             echo "CONFIG_ZSMALLOC=y" >> "$CONFIG_FILE"
             sed -i 's/CONFIG_ZRAM=m/CONFIG_ZRAM=y/g' "$CONFIG_FILE"
           fi
 
+          # android14/15：从 modules.bzl 移除 zram/zsmalloc 模块声明
           if [ "${{ inputs.android_version }}" = "android14" ] || [ "${{ inputs.android_version }}" = "android15" ]; then
             sed -i 's/"drivers\/block\/zram\/zram\.ko",//g; s/"mm\/zsmalloc\.ko",//g' "$KERNEL_ROOT/common/modules.bzl"
-            echo "CONFIG_MODULE_SIG_FORCE=n" >> "$CONFIG_FILE"
           fi
 
+          # 启用压缩算法（使用独立 fragment 文件）
           if grep -q "CONFIG_ZSMALLOC=y" "$CONFIG_FILE" && grep -q "CONFIG_ZRAM=y" "$CONFIG_FILE"; then
-            cat >> "$CONFIG_FILE" << 'EOF'
-          CONFIG_CRYPTO_LZ4HC=y
-          CONFIG_CRYPTO_LZ4K=y
-          CONFIG_CRYPTO_LZ4KD=y
-          CONFIG_CRYPTO_842=y
-          CONFIG_CRYPTO_LZ4K_OPLUS=y
-          EOF
+            cat "$ZZH_PATCHES/config/zram.config" >> "$CONFIG_FILE"
           fi
 
       # ==================== 添加 BBG 防格机补丁 ====================
@@ -905,6 +914,7 @@ jobs:
           else
             # 配置 6.1+ 内核
             sed -i '/^[[:space:]]*"protected_exports_list"[[:space:]]*:[[:space:]]*"android\/abi_gki_protected_exports_aarch64",$/d' ./common/BUILD.bazel
+            sed -i '/kmi_symbol_list_strict_mode/d' ./common/BUILD.bazel
             rm -rf ./common/android/abi_gki_protected_exports_*
             sed -i "/stable_scmversion_cmd/s/-maybe-dirty//g" ./build/kernel/kleaf/impl/stamp.bzl
           fi
@@ -912,16 +922,34 @@ jobs:
           # 配置内核名称
           if [ -n "${{ inputs.version }}" ]; then
             CLEAN_VERSION=$(echo "${{ inputs.version }}" | sed -E 's/^[0-9]+\.[0-9]+\.[0-9]+//')
-            sed -i '$s|echo "\$res"|echo "'"$CLEAN_VERSION"'"|' ./common/scripts/setlocalversion
+            # 6.6+：新格式 setlocalversion，保留 ${KERNELVERSION}
+            perl -i -0777 -pe 's/(.*)echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}"/$1echo "\$\{KERNELVERSION\}'"${CLEAN_VERSION}"'"/s' ./common/scripts/setlocalversion 2>/dev/null || true
+            # 旧格式（5.x/6.1）回退
+            sed -i "\$s|echo \"\$res\"|echo \"${CLEAN_VERSION}\"|" ./common/scripts/setlocalversion 2>/dev/null || true
             sed -i '/^CONFIG_LOCALVERSION=/ s/="\([^"]*\)"/="'"$CLEAN_VERSION"'"/' ./common/arch/arm64/configs/gki_defconfig
           elif [ ! -f "build/build.sh" ]; then
             cd ./common
             BID="ab$((RANDOM % 90000000 + 10000000))"
             GHASH=$(git rev-parse --verify HEAD | cut -c1-13)
-            kmi_61="-android14-11-g${GHASH}-${BID}"
-            sed -i "\$s|echo \"\$res\"|echo \"$kmi_61\"|" ./scripts/setlocalversion 2>/dev/null || true
-            kmi_66="-g${GHASH}-${BID}-4k"
-            sed -i "/^CONFIG_LOCALVERSION=/ s/=\"[^\"]*\"/=\"${kmi_66}\"/" ./arch/arm64/configs/gki_defconfig 2>/dev/null || true
+            # 统一内核名称格式：-androidXX-KMI-gHASH-BID-4k
+            case "${{ inputs.android_version }}-${{ inputs.kernel_version }}" in
+              "android14-6.1")  KMI_TAG="android14-11" ;;
+              "android15-6.6")  KMI_TAG="android15-8" ;;
+              "android16-6.12") KMI_TAG="android16-5" ;;
+              *) KMI_TAG="${{ inputs.android_version }}" ;;
+            esac
+
+            if [ "${{ inputs.kernel_version }}" = "6.1" ]; then
+              # 6.1：通过 setlocalversion 注入版本名称（旧格式）
+              KMI_LOCAL="-${KMI_TAG}-g${GHASH}-${BID}-4k"
+              sed -i "\$s|echo \"\$res\"|echo \"${KMI_LOCAL}\"|" ./scripts/setlocalversion 2>/dev/null || true
+              sed -i "/^CONFIG_LOCALVERSION=/ s/=\"[^\"]*\"/=\"${KMI_LOCAL}\"/" ./arch/arm64/configs/gki_defconfig 2>/dev/null || true
+            else
+              # 6.6+：修改 setlocalversion 注入版本名称（新格式，参考 wild_kernel）
+              # 保留 ${KERNELVERSION} 和 ${config_localversion} 由脚本运行时解析
+              SUFFIX="-${KMI_TAG}-g${GHASH}-${BID}"
+              perl -i -0777 -pe 's/(.*)echo "\$\{KERNELVERSION\}\$\{file_localversion\}\$\{config_localversion\}\$\{LOCALVERSION\}\$\{scm_version\}"/$1echo "\$\{KERNELVERSION\}'"${SUFFIX}"'\$\{config_localversion\}"/s' ./scripts/setlocalversion 2>/dev/null || true
+            fi
           fi
 
       # ==================== 自定义构建时间 ====================
@@ -984,7 +1012,24 @@ jobs:
               LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh CC="/usr/bin/ccache clang" || exit 1
             else
               # 6.1+ 内核使用 Bazel 构建
-              tools/bazel build --disk_cache=/home/runner/.cache/bazel --config=fast --lto=thin //common:kernel_aarch64_dist || exit 1
+              # 提取 gki_defconfig 修改到 fragment，避免 bazel trim 检查失败
+              FRAG="common/arch/arm64/configs/ksu.fragment"
+              diff "$DEFCONFIG.orig" "$DEFCONFIG" | grep '^>' | sed 's/^> //; s/^[[:space:]]*//' > "$FRAG" || true
+              cp "$DEFCONFIG.orig" "$DEFCONFIG"
+              echo "=== KSU Fragment 内容 ==="
+              cat "$FRAG"
+              echo "========================="
+              # 仅当 fragment 非空时传递参数
+              FRAG_FLAG=""
+              if [ -s "$FRAG" ]; then
+                FRAG_FLAG="--defconfig_fragment=//common:arch/arm64/configs/ksu.fragment"
+              fi
+              # 6.12+ 使用 lto=none（Rust 内核模块不兼容 thin LTO）
+              LTO_FLAG="--lto=thin"
+              if [ "${{ inputs.kernel_version }}" = "6.12" ]; then
+                LTO_FLAG="--lto=none"
+              fi
+              tools/bazel build --disk_cache=/home/runner/.cache/bazel --config=fast $LTO_FLAG $FRAG_FLAG //common:kernel_aarch64_dist || exit 1
               strings ./bazel-bin/common/kernel_aarch64/Image | grep 'Linux version'
             fi
 

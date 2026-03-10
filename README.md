@@ -20,29 +20,9 @@
 
 <table>
 <tr>
-<td align="center" width="50%">
-
-**📖 文档**
-
-[GitHub Wiki](https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki)
-
-</td>
-<td align="center" width="50%">
-
-**📥 下载**
-
-[Releases](https://github.com/zzh20188/GKI_KernelSU_SUSFS/releases)
-
-</td>
-</tr>
-<tr>
-<td align="center" colspan="2">
-
-**🔰 新手自定义构建必看**
-
-[Fork 与自定义编译指南](https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki/Fork%E4%B8%8E%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E6%8C%87%E5%8D%97)
-
-</td>
+<td align="center" width="33%">📖 <b><a href="https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki">文档</a></b></td>
+<td align="center" width="34%">📥 <b><a href="https://github.com/zzh20188/GKI_KernelSU_SUSFS/releases">下载</a></b></td>
+<td align="center" width="33%">🔰 <b><a href="https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki/Fork%E4%B8%8E%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E6%8C%87%E5%8D%97">新手自定义构建必看</a></b></td>
 </tr>
 </table>
 
@@ -53,6 +33,10 @@
 > **注意：** 目前不支持一加 ColorOS 14、15，刷入后可能需要清除数据开机。
 
 > **ReSukiSU：ReSukiSU更新比SukiSU勤快，SukiSU报错就试试ReSukiSU**
+>
+> **默认变体已切换为 ReSukiSU**
+
+> **Android 16：已支持 Android 16 - 6.12 内核版本**
 
 
 ---
