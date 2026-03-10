@@ -17,7 +17,7 @@ on:
           - MKSU
           - SukiSU
           - ReSukiSU
-        default: ReSukiSU
+        default: SukiSU
       kernelsu_branch:
         description: "KSU 分支"
         required: true
