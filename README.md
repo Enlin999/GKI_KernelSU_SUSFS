@@ -22,7 +22,7 @@
 <tr>
 <td align="center" width="33%">📖 <b><a href="https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki">文档</a></b></td>
 <td align="center" width="34%">📥 <b><a href="https://github.com/zzh20188/GKI_KernelSU_SUSFS/releases">下载</a></b></td>
-<td align="center" width="33%">🔰 <b><a href="https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki/Fork%E4%B8%8E%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E6%8C%87%E5%8D%97">新手自定义构建必看</a></b></td>
+<td align="center" width="33%">🔰 <b><a href="https://zzh20188.github.io/GKI_KernelSU_SUSFS/guide.html">教程</a></b></td>
 </tr>
 </table>
 
@@ -46,7 +46,7 @@
 详细说明请查阅 [**GitHub Wiki（中英双语）**](https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki)
 
 Wiki 涵盖内容：
-- [**🔰 新手必看**](https://github.com/zzh20188/GKI_KernelSU_SUSFS/wiki/Fork%E4%B8%8E%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BC%96%E8%AF%91%E6%8C%87%E5%8D%97)
+- [**🔰 教程**](https://zzh20188.github.io/GKI_KernelSU_SUSFS/guide.html)
 - 📥 下载/刷入内核
 - 💡 使用技巧 Tips
 - 🆘 救砖指南
@@ -58,8 +58,8 @@ Wiki 涵盖内容：
 
 当以下两个分支的更新节奏不一致时，构建可能失败：
 
-- SukiSU builtin 分支：<https://github.com/SukiSU-Ultra/SukiSU-Ultra/tree/builtin>
-- SUSFS gki-android14-6.1 分支：<https://gitlab.com/simonpunk/susfs4ksu/-/tree/gki-android14-6.1?ref_type=heads>
+- [SukiSU builtin 分支](https://github.com/SukiSU-Ultra/SukiSU-Ultra/tree/builtin)
+- [SUSFS gki-android14-6.1 分支](https://gitlab.com/simonpunk/susfs4ksu/-/tree/gki-android14-6.1?ref_type=heads)
 
 例如：SUSFS 刚更新了新提交，但 SukiSU 的 `builtin` 分支还没跟进适配，这时打补丁/编译就容易失败。
 
@@ -82,8 +82,8 @@ Wiki 涵盖内容：
 
 **如何获取提交哈希？**
 
-- SUSFS: https://gitlab.com/simonpunk/susfs4ksu
-- SukiSU: https://github.com/SukiSU-Ultra/SukiSU-Ultra/commits/builtin/
+- SUSFS: [susfs4ksu](https://gitlab.com/simonpunk/susfs4ksu)
+- SukiSU: [SukiSU-Ultra commits/builtin](https://github.com/SukiSU-Ultra/SukiSU-Ultra/commits/builtin/)
 
 以 SUSFS 为例，先选择分支，再复制对应提交的哈希值：
 
