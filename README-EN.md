@@ -46,19 +46,47 @@ Wiki covers:
 
 ---
 
-## ❗ Common Build Failure Cause (SukiSU / SUSFS Out of Sync)
+## 🛡️ GhostLock Security Fix
 
-When the following two branches update at different paces, builds may fail:
+GhostLock is a pair of high-risk Linux kernel vulnerabilities tracked as `CVE-2026-43499` and `CVE-2026-53163`. An attacker does not need Root access or an additional kernel module. The vulnerability may be exploited by any application or local process that can run code on the device.
 
-- [SukiSU builtin branch](https://github.com/SukiSU-Ultra/SukiSU-Ultra/tree/builtin)
-- [SUSFS gki-android14-6.1 branch](https://gitlab.com/simonpunk/susfs4ksu/-/tree/gki-android14-6.1?ref_type=heads)
+### Potential impact
 
-For example: SUSFS just pushed a new commit, but SukiSU's `builtin` branch hasn't caught up yet — patching/compiling will likely fail.
+- **System crash or forced reboot:** An ordinary application can crash the kernel, making the device unavailable and potentially causing the loss of unsaved data.
+- **Local privilege escalation:** A more advanced exploit can cross Android security boundaries and give an ordinary application kernel-level control of the device.
+- **Public exploits are available:** Both a denial-of-service proof of concept and a complete privilege-escalation chain targeting Android ARM64 have been published. This is no longer a theoretical risk.
+- **No reliable temporary workaround exists:** Permission restrictions, application isolation, and hardening options may make exploitation harder, but they cannot fully prevent crashes or alternative exploit methods.
 
-In such cases, you can only wait for SukiSU to follow up and complete adaptation with the latest SUSFS commit.
+The vulnerability cannot be triggered directly over the network. However, a malicious application, untrusted code in a shared environment, or an attacker who already gained code execution through another vulnerability can use GhostLock as the next step. Extra care should therefore be taken with applications, modules, and scripts from unknown sources.
 
-<img src="assets/sukisu_eg1.png" alt="SukiSU builtin update history" width="80%">
-<img src="assets/susfs_eg1.png" alt="SUSFS gki-android14-6.1 update history" width="80%">
+This project can check and apply the complete fix when building kernels 5.10, 5.15, 6.1, 6.6, and 6.12. The option is disabled by default. To include GhostLock protection, manually enable `CVE-2026-43499 rtmutex fix chain` when starting a build. Both vulnerability fixes must be present together, and the workflow handles this automatically. Kernels that already contain the complete fix are not patched again.
+
+The fix has passed a [full build validation covering 84 kernel versions](https://github.com/zzh20188/GKI_KernelSU_SUSFS/actions/runs/29509099128). For vulnerability details, affected systems, public exploits, and mitigation guidance, read CIQ's article: [GhostLock Mitigation](https://kb.ciq.com/article/rocky-linux/rl-ghostlock-mitigation).
+
+---
+
+## 🧪 Droidspaces Container Support (Experimental)
+
+> **Experimental feature:** Successful build and boot is not guaranteed across all GKI versions. Always back up your boot image before flashing.
+>
+> **TIPS:** The workflow uses the [official Droidspaces patches](https://github.com/ravindu644/Droidspaces-OSS/tree/main/Documentation/resources/kernel-patches/GKI) from [Droidspaces](https://github.com/ravindu644/Droidspaces-OSS). If you have better patches, feel free to open an issue. Since there are three patch variants, you may need to test them repeatedly to find one that fits your device. Choose based on other users' feedback or your own experience.
+
+[Droidspaces](https://github.com/ravindu644/Droidspaces-OSS) is a lightweight Linux containerization tool that lets you run full Linux environments (with systemd, OpenRC, etc.) on Android — useful for development, running servers, and more.
+
+**Supported versions:** 5.10 / 5.15 / 6.1 / 6.6 / 6.12
+
+**Usage:** When triggering a build manually, select the `Droidspaces` option:
+
+| Option | Description |
+|:---:|:---|
+| `off` | Disabled (default) |
+| `678` | Use 6_7_8 slot patch (recommended) |
+| `123` | Use 1_2_3 slot patch (fallback) |
+| `345` | Use 3_4_5 slot patch (fallback) |
+
+> **Note:** Kernel 6.12 has only one patch — any non-off option will use it.
+
+**If the build fails or bootloops after flashing:** Try switching to a different slot patch (e.g. 678 → 123 or 345). Different kernel sub-levels may require different patches.
 
 ## 🔧 Custom Commit Pinning
 Use the [`config/config`](config/config) file to pin SUSFS and SukiSU to specific commits.

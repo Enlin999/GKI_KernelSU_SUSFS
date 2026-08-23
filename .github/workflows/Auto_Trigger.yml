@@ -12,7 +12,7 @@ jobs:
     if: contains(fromJSON('["zzh20188", "elysias123"]'), github.repository_owner)
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -96,7 +96,6 @@ jobs:
       #         "inputs": {
       #           "make_release": "true",
       #           "kernelsu_variant": "SukiSU",
-      #           "kernelsu_branch": "Stable(标准)",
       #           "version": "",
       #           "use_zram": "false",
       #           "use_bbg": "true",
